@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 
-// Emergency kill-switch: disable all /api/admin/* endpoints by default.
+// Emergency kill-switch: disable the privileged role-update endpoint by default.
 // Re-enable by setting this to false (and redeploying).
-const DISABLE_ADMIN_API = true
+const DISABLE_ADMIN_UPDATE_ROLE_API = true
 
 export function middleware() {
-  if (DISABLE_ADMIN_API) {
+  if (DISABLE_ADMIN_UPDATE_ROLE_API) {
     return new NextResponse(null, { status: 404 })
   }
 
@@ -13,6 +13,5 @@ export function middleware() {
 }
 
 export const config = {
-  matcher: ['/api/admin/:path*']
+  matcher: ['/api/admin/update-role', '/api/admin/update-role/:path*']
 }
-
