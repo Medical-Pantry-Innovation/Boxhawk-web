@@ -13,5 +13,5 @@ export function middleware() {
 }
 
 export const config = {
-  matcher: ['/api/admin/update-role', '/api/admin/update-role/:path*']
+  matcher: ['/api/admin/users/create', '/api/admin/users/create/:path*']
 }
