@@ -8,11 +8,11 @@ export default function Logo({
   style = {} 
 }) {
   const sizeConfig = {
-    small: { width: 24, height: 24, fontSize: '16px' },
-    medium: { width: 32, height: 32, fontSize: '20px' },
-    large: { width: 48, height: 48, fontSize: '28px' },
-    xlarge: { width: 80, height: 80, fontSize: '48px' },
-    xxlarge: { width: 300, height: 300, fontSize: '80px' }
+    small: { width: 24, height: 18, fontSize: '16px' },
+    medium: { width: 32, height: 24, fontSize: '20px' },
+    large: { width: 48, height: 32, fontSize: '28px' },
+    xlarge: { width: 180, height: 120, fontSize: '48px' },
+    xxlarge: { width: 300, height: 200, fontSize: '80px' }
   }
 
   const config = size === 'nav'
