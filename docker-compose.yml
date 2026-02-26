@@ -1,0 +1,13 @@
+services:
+    boxhawk_frontend:
+        container_name: boxhawk_frontend
+        image: boxhawk:latest
+        ports:
+            - "3000:3000"
+        #volumes:
+            #- "/home/james/Desktop/medical_pantry/Boxhawk-web/boxhawk-web:./media"
+        env_file:
+            - boxhawk-web/.env.local
+        stdin_open: true
+        tty: true
+        command: npm start
