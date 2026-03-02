@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabaseAdmin'
+import { apiAuth } from 'lib/apiAuth.js'
+
+const requiredRole = "admin"
 
 export async function POST(req) {
+  apiAuth(requiredRole)
   const { userId, role } = await req.json()
   
   try {

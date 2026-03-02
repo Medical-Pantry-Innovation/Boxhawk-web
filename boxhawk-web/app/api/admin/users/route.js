@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { apiAuth } from 'lib/apiAuth.js'
+
+const requiredRole = "admin"
+
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -13,6 +17,7 @@ const supabaseAdmin = createClient(
 )
 
 export async function GET(request) {
+  apiAuth(requiredRole)
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page')) || 1
@@ -52,6 +57,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  apiAuth(requiredRole)
   try {
     const { email, password, role } = await request.json()
 
@@ -83,6 +89,7 @@ export async function POST(request) {
 }
 
 export async function PUT(request) {
+  apiAuth(requiredRole)
   try {
     const { userId, role } = await request.json()
 
@@ -111,6 +118,7 @@ export async function PUT(request) {
 }
 
 export async function DELETE(request) {
+  apiAuth(requiredRole)
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')

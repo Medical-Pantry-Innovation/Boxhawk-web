@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
+import { apiAuth } from 'lib/apiAuth.js'
+
+const requiredRole = "admin"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -63,6 +66,7 @@ async function sendInvitationEmail(email, inviteLink, role) {
 
 // GET - List all invitations or check specific invitation
 export async function GET(request) {
+  apiAuth(requiredRole)
   try {
     const { searchParams } = new URL(request.url)
     const email = searchParams.get('email')
@@ -108,6 +112,7 @@ export async function GET(request) {
 
 // POST - Create new invitation
 export async function POST(request) {
+  apiAuth(requiredRole)
   try {
     const { email, role = 'photouser' } = await request.json()
 
@@ -198,6 +203,7 @@ export async function POST(request) {
 
 // PUT - Update invitation status
 export async function PUT(request) {
+  apiAuth(requiredRole)
   try {
     const { email, status } = await request.json()
 

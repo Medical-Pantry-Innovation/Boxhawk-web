@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { apiAuth } from 'lib/apiAuth.js'
+
+const requiredRole = "expert"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -6,6 +9,7 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(request) {
+  apiAuth(requiredRole)
   try {
     const { imageIds = [], hardDelete = false } = await request.json()
     if (!Array.isArray(imageIds) || imageIds.length === 0) {
