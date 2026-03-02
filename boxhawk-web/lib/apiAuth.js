@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { hasMinimumRole } 'lib/rbac.js'
+import { hasMinimumRole } from '@/lib/rbac.js'
 
 export function apiAuth(requiredRole){
     // Get the request

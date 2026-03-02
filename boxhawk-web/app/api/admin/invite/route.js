@@ -1,5 +1,5 @@
 // Redirect to the new invitations API
-import { apiAuth } from 'lib/apiAuth.js'
+import { apiAuth } from '@/lib/apiAuth.js'
 
 const requiredRole = "admin"
 

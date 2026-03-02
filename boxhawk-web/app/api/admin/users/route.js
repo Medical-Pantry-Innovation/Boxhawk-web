@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { apiAuth } from 'lib/apiAuth.js'
+import { apiAuth } from '@/lib/apiAuth.js'
 
 const requiredRole = "admin"
 
