@@ -588,15 +588,17 @@ export default function UploadPage() {
                 onChange={handleInputChange}
                 placeholder="Enter item name"
                 style={{
-                  width: '100%',
+                  width:'114%',
                   padding: '12px',
                   border: '1px solid #ddd',
                   borderRadius: '6px',
-                  fontSize: '14px',
+                  fontSize: '16px',
+                  transformOrigin:'left center',
+                  transform: 'scale(0.875)',
                   outline: 'none',
                   transition: 'border-color 0.2s ease'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#6c5ce7'}
+                onClick={(e) => e.target.style.borderColor = '#6c5ce7'}
                 onBlur={(e) => e.target.style.borderColor = '#ddd'}
               />
             </div>
@@ -618,15 +620,17 @@ export default function UploadPage() {
                 onChange={handleInputChange}
                 placeholder="Enter manufacturer"
                 style={{
-                  width: '100%',
+                  width:'114%',
                   padding: '12px',
                   border: '1px solid #ddd',
                   borderRadius: '6px',
-                  fontSize: '14px',
+                  fontSize: '16px',
+                  transformOrigin:'left center',
+                  transform: 'scale(0.875)',
                   outline: 'none',
                   transition: 'border-color 0.2s ease'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#6c5ce7'}
+                onClick={(e) => e.target.style.borderColor = '#6c5ce7'}
                 onBlur={(e) => e.target.style.borderColor = '#ddd'}
               />
             </div>
@@ -674,7 +678,7 @@ export default function UploadPage() {
                 width: `${uploadProgress}%`,
                 height: '100%',
                 backgroundColor: '#6c5ce7',
-                transition: 'width 0.3s ease'
+                transition: 'width 0.2s ease'
               }} />
             </div>
           </div>
