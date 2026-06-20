@@ -565,7 +565,7 @@ export default function UploadPage() {
           <h4 style={{ margin: '0 0 16px 0', color: '#1f2937', fontSize: '16px' }}>Tips for better photos</h4>
           <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <li>Capture the front, back, and both sides so we can see the full packaging.</li>
-            <li>Take close-ups of key details: product labels, barcodes, dates (manufacture and expiration), identification numbers, and any regulatory or recycling symbols.</li>
+            <li>Take close-ups of key details: product labels, barcodes, dates (manufacture and expiration), and identification numbers.</li>
             <li>Use bright, even lighting and avoid glare or shadows. Retake any blurry shots.</li>
             <li>Keep the product centered in the frame and clear away cluttered backgrounds.</li>
             <li>Upload photos for only one product per submission—do not mix different items.</li>

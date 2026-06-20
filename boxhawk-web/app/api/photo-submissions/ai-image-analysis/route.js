@@ -26,7 +26,7 @@ Analyze the provided product packaging images and extract visible label informat
 1. Submission ID: {{submission_id}}
 2. Product Packaging Images
 
-Images may include multiple sides or panels of the same product packaging. Images may include barcodes, manufacturing data, sterile indicators, regulatory symbols, or product identification information.
+Images may include multiple sides or panels of the same product packaging. Images may include barcodes, manufacturing data, or product identification information.
 
 ### Extraction Rules
 

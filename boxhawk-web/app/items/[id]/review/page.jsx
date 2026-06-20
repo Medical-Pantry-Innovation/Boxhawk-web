@@ -3,12 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import {
-  GENERAL_SYMBOLS,
-  RECYCLING_SYMBOLS,
-  parseSymbolField,
-  serializeSymbolField
-} from '@/constants/symbolOptions'
 
 export default function ReviewPage() {
   const [reviewData, setReviewData] = useState(null)
@@ -49,12 +43,6 @@ export default function ReviewPage() {
       setSaving(true)
       setShowConfirm(false)
       
-      const {
-        labels: generalSymbols = [],
-        recycling_symbol: recyclingSymbols = [],
-        ...restFormFields
-      } = reviewData.formData || {}
-
       const updatePayload = actionType === 'reject'
         ? {
             status: 'rejected',
@@ -62,9 +50,9 @@ export default function ReviewPage() {
             updated_at: new Date().toISOString()
           }
         : {
-            ...restFormFields,
-            labels: serializeSymbolField(generalSymbols, GENERAL_SYMBOLS),
-            recycling_symbol: serializeSymbolField(recyclingSymbols, RECYCLING_SYMBOLS),
+            ...reviewData.formData,
+            labels: '',
+            recycling_symbol: '',
             status: 'complete',
             reviewed: true,
             updated_at: new Date().toISOString()
@@ -175,71 +163,6 @@ export default function ReviewPage() {
 
   const { formData, images } = reviewData
   const firstImage = images && images.length > 0 ? images[0] : null
-  const generalSymbolsSelected = parseSymbolField(formData?.labels, GENERAL_SYMBOLS)
-  const recyclingSymbolsSelected = parseSymbolField(formData?.recycling_symbol, RECYCLING_SYMBOLS)
-
-  const renderSymbolBadges = (selectedIds, options, accentColor) => {
-    if (!selectedIds || selectedIds.length === 0) {
-      return (
-        <span style={{ color: '#6b7280', fontSize: '14px' }}>
-          None selected
-        </span>
-      )
-    }
-
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}
-      >
-        {selectedIds.map((id) => {
-          const option = options.find((opt) => opt.id === id)
-          const label = option ? option.label : id
-          const image = option?.image
-          return (
-            <div
-              key={id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: accentColor,
-                borderRadius: '999px',
-                padding: '6px 12px'
-              }}
-            >
-              {image && (
-                <img
-                  src={image}
-                  alt={label}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    objectFit: 'contain',
-                    borderRadius: '50%',
-                    backgroundColor: '#fff',
-                    padding: '2px'
-                  }}
-                />
-              )}
-              <span
-                style={{
-                  color: '#111827',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}
-              >
-                {label}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
 
   return (
     <div style={{
@@ -592,28 +515,6 @@ export default function ReviewPage() {
                   }}>
                     {formData.quantity || ''}
                   </div>
-                </div>
-
-                <div>
-                  <div style={{
-                    fontSize: '14px',
-                    color: '#666',
-                    marginBottom: '4px'
-                  }}>
-                    General Symbols:
-                  </div>
-                  {renderSymbolBadges(generalSymbolsSelected, GENERAL_SYMBOLS, '#e0e7ff')}
-                </div>
-
-                <div>
-                  <div style={{
-                    fontSize: '14px',
-                    color: '#666',
-                    marginBottom: '4px'
-                  }}>
-                    Recycling Symbols:
-                  </div>
-                  {renderSymbolBadges(recyclingSymbolsSelected, RECYCLING_SYMBOLS, '#d1fae5')}
                 </div>
 
                 <div>

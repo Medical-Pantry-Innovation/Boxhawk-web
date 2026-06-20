@@ -31,7 +31,8 @@ export async function POST(request) {
       .insert({
         name: newSubmission.name,
         manufacturer: newSubmission.manufacturer,
-        labels: newSubmission?.labels || null,
+        labels: '',
+        recycling_symbol: '',
         status: 'in_review',
         created_by: sourceRow?.created_by
       })
@@ -72,5 +73,4 @@ export async function POST(request) {
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
 
