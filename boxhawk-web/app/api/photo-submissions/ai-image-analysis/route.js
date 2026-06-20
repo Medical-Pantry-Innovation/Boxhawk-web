@@ -14,6 +14,73 @@ const openrouter = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1'
 })
 
+const firstPresent = (...values) => {
+  for (const value of values) {
+    if (value !== undefined && value !== null && value !== '') return value
+  }
+  return null
+}
+
+const getExtractionRecord = (parsed, submissionId) => {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {}
+  }
+
+  if (Array.isArray(parsed[submissionId])) {
+    return parsed[submissionId][0] || {}
+  }
+
+  const stringId = String(submissionId)
+  if (Array.isArray(parsed[stringId])) {
+    return parsed[stringId][0] || {}
+  }
+
+  if (Array.isArray(parsed.result)) {
+    return parsed.result[0] || {}
+  }
+
+  if (parsed.result && typeof parsed.result === 'object') {
+    return parsed.result
+  }
+
+  return parsed
+}
+
+const normalizeExtraction = (record) => ({
+  name: firstPresent(record.name, record.product_name),
+  manufacturer: firstPresent(record.manufacturer, record.manufacturer_name),
+  barcode: firstPresent(record.barcode, record.barcode_number, record.gtin),
+  size: firstPresent(record.size, record.dimensions),
+  date_of_manufacture: firstPresent(
+    record.date_of_manufacture,
+    record.manufacture_date,
+    record.manufacturing_date,
+    record.date_of_manufacturing
+  ),
+  expiration: firstPresent(
+    record.expiration,
+    record.expiration_date,
+    record.expiry,
+    record.expiry_date,
+    record.use_by_date
+  ),
+  lot: firstPresent(record.lot, record.lot_number, record.batch, record.batch_number),
+  ref: firstPresent(record.ref, record.reference, record.reference_number, record.catalogue_number, record.catalog_number),
+  quantity: firstPresent(record.quantity, record.package_quantity),
+  manufacture_address: firstPresent(
+    record.manufacture_address,
+    record.manufacturer_address,
+    record.manufacturing_address
+  ),
+  manufacture_site: firstPresent(
+    record.manufacture_site,
+    record.manufacturer_site,
+    record.manufacturing_site,
+    record.manufacturing_facility
+  ),
+  sponsor: firstPresent(record.sponsor, record.distributor, record.regulatory_representative),
+  notes: firstPresent(record.notes, record.additional_notes)
+})
 
 // Prompt
 const PROMPT = `
@@ -72,10 +139,6 @@ If text is partially visible or uncertain:
 
 Return ONLY a valid JSON object.  
 Do not include explanations or text outside the JSON.
-
-The output must follow this structure:
-- The top-level key must be the submission id.
-- The value must be a list containing one extracted record.
 
 output the result into following structure:
 
@@ -183,21 +246,25 @@ export async function POST(req) {
       parsed = { raw: result }
     }
 
+    const extraction = normalizeExtraction(getExtractionRecord(parsed, submission_id))
+
     // update the database using parsed data
     await supabase
     .from('photo_submissions')
     .update({
-      name: parsed.name,
-      manufacturer: parsed.manufacturer,
-      barcode: parsed.barcode,
-      size: parsed.size,
-      lot: parsed.lot,
-      ref: parsed.ref,
-      quantity: parsed.quantity,
-      manufacture_address: parsed.manufacture_address,
-      manufacture_site: parsed.manufacture_site,
-      sponsor: parsed.sponsor,
-      notes: parsed.notes
+      name: extraction.name,
+      manufacturer: extraction.manufacturer,
+      barcode: extraction.barcode,
+      size: extraction.size,
+      date_of_manufacture: extraction.date_of_manufacture,
+      expiration: extraction.expiration,
+      lot: extraction.lot,
+      ref: extraction.ref,
+      quantity: extraction.quantity,
+      manufacture_address: extraction.manufacture_address,
+      manufacture_site: extraction.manufacture_site,
+      sponsor: extraction.sponsor,
+      notes: extraction.notes
     })
     .eq('id', submission_id)
 
@@ -207,7 +274,7 @@ export async function POST(req) {
     // --------------------
     return NextResponse.json({
       id: submission_id,
-      result: parsed
+      result: extraction
     })
   } catch (err) {
     console.error('AI extraction error:', err)
