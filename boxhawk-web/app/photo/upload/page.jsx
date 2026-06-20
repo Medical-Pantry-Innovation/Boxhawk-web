@@ -108,6 +108,7 @@ export default function UploadPage() {
       reader.readAsDataURL(file)
     })
 
+
     setError(null)
   }
 
@@ -116,6 +117,35 @@ export default function UploadPage() {
     setImages(prev => prev.filter(img => img.id !== imageId))
   }
 
+  // Send Image analysis request to backend
+  // the AI model we used is gemini-3.1-flash-lite-preview
+  const runAIExtraction = async (submissionId) => {
+    try {
+      const response = await fetch(
+        '/api/photo-submissions/ai-image-analysis',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            submission_id: submissionId
+          })
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'AI extraction failed')
+      }
+
+      console.log('AI Result:', data)
+
+    } catch (error) {
+      console.error(error)
+    }
+  }
   // Take photo (mobile)
   const takePhoto = () => {
     if (isMobile()) {
@@ -142,15 +172,16 @@ export default function UploadPage() {
       return
     }
 
-    if (!formData.name.trim()) {
-      setError('Item name is required')
-      return
-    }
+    // DELETE BELOW, NO NEED FOR INPUT
+    // if (!formData.name.trim()) {
+    //   setError('Item name is required')
+    //   return
+    // }
 
-    if (!formData.manufacturer.trim()) {
-      setError('Manufacturer is required')
-      return
-    }
+    // if (!formData.manufacturer.trim()) {
+    //   setError('Manufacturer is required')
+    //   return
+    // }
 
     setUploading(true)
     setUploadProgress(0)
@@ -256,6 +287,9 @@ export default function UploadPage() {
       // Success - redirect to success page
       router.push('/success')
 
+      // Images have been uploaded, we can do AI image analysis now
+      runAIExtraction(submission.id)
+      
     } catch (error) {
       console.error('Upload error:', error)
       setError(`Upload failed: ${error.message}`)
@@ -439,90 +473,7 @@ export default function UploadPage() {
           style={{ display: 'none' }}
         />
 
-        {/* Form Inputs */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          padding: '24px',
-          marginBottom: '24px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            marginBottom: '16px',
-            color: '#333'
-          }}>
-            Item Information
-          </h3>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '16px',
-            marginBottom: '16px'
-          }}>
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                marginBottom: '6px',
-                color: '#333'
-              }}>
-                Item Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Enter item name"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#6c5ce7'}
-                onBlur={(e) => e.target.style.borderColor = '#ddd'}
-              />
-            </div>
-            
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                marginBottom: '6px',
-                color: '#333'
-              }}>
-                Manufacturer *
-              </label>
-              <input
-                type="text"
-                name="manufacturer"
-                value={formData.manufacturer}
-                onChange={handleInputChange}
-                placeholder="Enter manufacturer"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#6c5ce7'}
-                onBlur={(e) => e.target.style.borderColor = '#ddd'}
-              />
-            </div>
-          </div>
-        </div>
+
 
         {/* Error Message */}
         {error && (
