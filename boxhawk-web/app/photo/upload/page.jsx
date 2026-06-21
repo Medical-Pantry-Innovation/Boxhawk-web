@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { MdCamera, MdCameraswitch } from 'react-icons/md'
 
 export default function UploadPage() {
   const [images, setImages] = useState([])
@@ -15,7 +16,11 @@ export default function UploadPage() {
     name: '',
     manufacturer: ''
   })
-  const fileInputRef = useRef(null)
+  const [stream, setStream] = useState(null)
+  const [facingMode, setFacingMode] = useState('environment')
+  const [cameraError, setCameraError] = useState(null)
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
   const router = useRouter()
 
   const minImages = 4
@@ -64,52 +69,61 @@ export default function UploadPage() {
     checkUser()
   }, [router])
 
+  // Initialize camera stream
+  useEffect(() => {
+    const initCamera = async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError('Camera access is not supported in this browser')
+        return
+      }
+
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode },
+          audio: false
+        })
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream
+        }
+        setStream(mediaStream)
+        setCameraError(null)
+      } catch (err) {
+        if (err.name === 'NotAllowedError') {
+          setCameraError('Camera permission denied. Please allow camera access.')
+        } else if (err.name === 'NotFoundError') {
+          setCameraError('No camera found on this device.')
+        } else {
+          setCameraError(`Camera error: ${err.message}`)
+        }
+      }
+    }
+
+    initCamera()
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [facingMode])
+
   // Check if device is mobile
-  const isMobile = () => {
+  const isMobileDevice = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   }
 
-  // Handle file selection
-  const handleFileSelect = (event) => {
-    const files = Array.from(event.target.files)
-    addImages(files)
-  }
-
-  // Handle drag and drop
-  const handleDrop = (event) => {
-    event.preventDefault()
-    const files = Array.from(event.dataTransfer.files)
-    addImages(files)
-  }
-
-  const handleDragOver = (event) => {
-    event.preventDefault()
-  }
-
-  // Add images to state
-  const addImages = (files) => {
-    const imageFiles = files.filter(file => file.type.startsWith('image/'))
-    
-    if (images.length + imageFiles.length > maxImages) {
-      setError(`Maximum ${maxImages} photos allowed`)
-      return
+  // Convert data URL to File object
+  const dataURLtoFile = (dataUrl, filename) => {
+    const arr = dataUrl.split(',')
+    const mime = arr[0].match(/:(.*?);/)[1]
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n)
     }
-
-    imageFiles.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImages(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          file: file,
-          preview: e.target.result,
-          name: file.name
-        }])
-      }
-      reader.readAsDataURL(file)
-    })
-
-
-    setError(null)
+    return new File([u8arr], filename, { type: mime })
   }
 
   // Remove image
@@ -154,6 +168,7 @@ export default function UploadPage() {
       // Desktop fallback
       fileInputRef.current?.click()
     }
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
   }
 
   // Handle form input changes
@@ -172,16 +187,6 @@ export default function UploadPage() {
       return
     }
 
-    // DELETE BELOW, NO NEED FOR INPUT
-    // if (!formData.name.trim()) {
-    //   setError('Item name is required')
-    //   return
-    // }
-
-    // if (!formData.manufacturer.trim()) {
-    //   setError('Manufacturer is required')
-    //   return
-    // }
 
     setUploading(true)
     setUploadProgress(0)
@@ -345,133 +350,202 @@ export default function UploadPage() {
           </p>
         </div>
 
-        {/* Upload Area */}
-        <div
-          style={{
-            border: images.length > 0 ? 'none' : '2px dashed #6c5ce7',
-            borderRadius: '12px',
-            padding: images.length > 0 ? '0' : '40px',
-            textAlign: 'center',
-            backgroundColor: images.length > 0 ? 'transparent' : '#ffffff',
-            marginBottom: '24px',
-            cursor: images.length === 0 ? 'pointer' : 'default',
-            transition: 'all 0.2s ease'
-          }}
-          onClick={images.length === 0 ? takePhoto : undefined}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-        >
-          {images.length === 0 ? (
-            <div>
+        {/* Camera Section */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '24px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          {/* Video Container */}
+          <div style={{
+            backgroundColor: '#000',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            aspectRatio: '4/3',
+            position: 'relative',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            {cameraError ? (
               <div style={{
-                fontSize: '48px',
-                marginBottom: '16px'
+                color: '#e74c3c',
+                padding: '2rem',
+                textAlign: 'center',
+                backgroundColor: '#2c3e50',
+                width: '100%'
               }}>
-                📷
+                <p>{cameraError}</p>
               </div>
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#6c5ce7',
-                marginBottom: '8px'
-              }}>
-                Upload Photos
-              </h3>
-              <p style={{
-                fontSize: '14px',
-                color: '#666',
-                margin: 0
-              }}>
-                {isMobile() 
-                  ? 'Tap to open camera or select from gallery'
-                  : 'Drag & drop images or click to select'
-                }
-              </p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-              gap: '16px'
-            }}>
-              {images.map((image, index) => (
-                <div key={image.id} style={{
-                  position: 'relative',
-                  aspectRatio: '1',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  backgroundColor: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  <img
-                    src={image.preview}
-                    alt={`Upload ${index + 1}`}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+                {isMobileDevice() && (
                   <button
-                    onClick={() => removeImage(image.id)}
+                    onClick={switchCamera}
+                    disabled={!stream || !!cameraError}
                     style={{
                       position: 'absolute',
-                      top: '8px',
-                      right: '8px',
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(0,0,0,0.6)',
+                      top: '12px',
+                      right: '12px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.6)',
                       color: 'white',
                       border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '14px',
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      cursor: stream && !cameraError ? 'pointer' : 'not-allowed',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      transition: 'background-color 0.2s, transform 0.2s',
+                      zIndex: 10
+                    }}
+                    onMouseEnter={(e) => {
+                      if (stream && !cameraError) {
+                        e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'
+                        e.target.style.transform = 'scale(1.1)'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = stream && !cameraError
+                        ? 'rgba(0, 0, 0, 0.6)'
+                        : 'rgba(149, 165, 166, 0.6)'
+                      e.target.style.transform = 'scale(1)'
                     }}
                   >
-                    ×
+                    <MdCameraswitch size={24} />
                   </button>
-                </div>
-              ))}
-              
-              {/* Add more button */}
-              {images.length < maxImages && (
-                <div
-                  onClick={takePhoto}
-                  style={{
-                    aspectRatio: '1',
-                    borderRadius: '8px',
-                    border: '2px dashed #6c5ce7',
-                    backgroundColor: '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>+</div>
-                  <div style={{ fontSize: '12px', color: '#6c5ce7' }}>
-                    Add More
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Capture Button */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <button
+              onClick={capturePhoto}
+              disabled={!stream || !!cameraError || images.length >= maxImages}
+              style={{
+                backgroundColor: (!stream || !!cameraError || images.length >= maxImages)
+                  ? '#95a5a6'
+                  : '#3498db',
+                color: 'white',
+                border: 'none',
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                cursor: (!stream || !!cameraError || images.length >= maxImages)
+                  ? 'not-allowed'
+                  : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background-color 0.2s, transform 0.2s',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.2)'
+              }}
+              onMouseEnter={(e) => {
+                if (stream && !cameraError && images.length < maxImages) {
+                  e.target.style.backgroundColor = '#2980b9'
+                  e.target.style.transform = 'scale(1.05)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = (stream && !cameraError && images.length < maxImages)
+                  ? '#3498db'
+                  : '#95a5a6'
+                e.target.style.transform = 'scale(1)'
+              }}
+            >
+              <MdCamera size={32} />
+            </button>
+          </div>
         </div>
 
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: 'none' }}
-        />
+        {/* Captured Photos Counter */}
+        {images.length > 0 && (
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '16px',
+            fontSize: '16px',
+            color: '#2c3e50',
+            fontWeight: '600'
+          }}>
+            Captured Photos: {images.length}/{maxImages}
+          </div>
+        )}
+
+        {/* Captured Photos Grid */}
+        {images.length > 0 && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+            gap: '16px',
+            marginBottom: '24px'
+          }}>
+            {images.map((image, index) => (
+              <div key={image.id} style={{
+                position: 'relative',
+                aspectRatio: '1',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <img
+                  src={image.preview}
+                  alt={`Capture ${index + 1}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+                <button
+                  onClick={() => removeImage(image.id)}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Hidden Canvas */}
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
 
 
@@ -516,7 +590,7 @@ export default function UploadPage() {
                 width: `${uploadProgress}%`,
                 height: '100%',
                 backgroundColor: '#6c5ce7',
-                transition: 'width 0.3s ease'
+                transition: 'width 0.2s ease'
               }} />
             </div>
           </div>
