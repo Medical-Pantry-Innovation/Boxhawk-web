@@ -131,37 +131,42 @@ export default function UploadPage() {
     setImages(prev => prev.filter(img => img.id !== imageId))
   }
 
-  // Capture photo from video stream
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return
+  // Send Image analysis request to backend
+  // the AI model we used is gemini-3.1-flash-lite-preview
+  const runAIExtraction = async (submissionId) => {
+    try {
+      const response = await fetch(
+        '/api/photo-submissions/ai-image-analysis',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            submission_id: submissionId
+          })
+        }
+      )
 
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    const context = canvas.getContext('2d')
+      const data = await response.json()
 
-    if (!context) return
+      if (!response.ok) {
+        throw new Error(data.error || 'AI extraction failed')
+      }
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    context.drawImage(video, 0, 0)
+      console.log('AI Result:', data)
 
-    const dataUrl = canvas.toDataURL('image/png')
-    const file = dataURLtoFile(dataUrl, `capture-${Date.now()}.png`)
-
-    setImages(prev => [...prev, {
-      id: Date.now() + Math.random(),
-      file: file,
-      preview: dataUrl,
-      name: file.name
-    }])
-
-    setError(null)
+    } catch (error) {
+      console.error(error)
+    }
   }
-
-  // Switch camera (front/back)
-  const switchCamera = async () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop())
+  // Take photo (mobile)
+  const takePhoto = () => {
+    if (isMobile()) {
+      fileInputRef.current?.click()
+    } else {
+      // Desktop fallback
+      fileInputRef.current?.click()
     }
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
   }
@@ -182,15 +187,6 @@ export default function UploadPage() {
       return
     }
 
-    if (!formData.name.trim()) {
-      setError('Item name is required')
-      return
-    }
-
-    if (!formData.manufacturer.trim()) {
-      setError('Manufacturer is required')
-      return
-    }
 
     setUploading(true)
     setUploadProgress(0)
@@ -296,6 +292,9 @@ export default function UploadPage() {
       // Success - redirect to success page
       router.push('/success')
 
+      // Images have been uploaded, we can do AI image analysis now
+      runAIExtraction(submission.id)
+      
     } catch (error) {
       console.error('Upload error:', error)
       setError(`Upload failed: ${error.message}`)
@@ -548,94 +547,7 @@ export default function UploadPage() {
         {/* Hidden Canvas */}
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-        {/* Form Inputs */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          padding: '24px',
-          marginBottom: '24px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            marginBottom: '16px',
-            color: '#333'
-          }}>
-            Item Information
-          </h3>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '16px',
-            marginBottom: '16px'
-          }}>
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                marginBottom: '6px',
-                color: '#333'
-              }}>
-                Item Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Enter item name"
-                style={{
-                  width:'114%',
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  transformOrigin:'left center',
-                  transform: 'scale(0.875)',
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onClick={(e) => e.target.style.borderColor = '#6c5ce7'}
-                onBlur={(e) => e.target.style.borderColor = '#ddd'}
-              />
-            </div>
-            
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                marginBottom: '6px',
-                color: '#333'
-              }}>
-                Manufacturer *
-              </label>
-              <input
-                type="text"
-                name="manufacturer"
-                value={formData.manufacturer}
-                onChange={handleInputChange}
-                placeholder="Enter manufacturer"
-                style={{
-                  width:'114%',
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  transformOrigin:'left center',
-                  transform: 'scale(0.875)',
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onClick={(e) => e.target.style.borderColor = '#6c5ce7'}
-                onBlur={(e) => e.target.style.borderColor = '#ddd'}
-              />
-            </div>
-          </div>
-        </div>
+
 
         {/* Error Message */}
         {error && (
@@ -727,7 +639,7 @@ export default function UploadPage() {
           <h4 style={{ margin: '0 0 16px 0', color: '#1f2937', fontSize: '16px' }}>Tips for better photos</h4>
           <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <li>Capture the front, back, and both sides so we can see the full packaging.</li>
-            <li>Take close-ups of key details: product labels, barcodes, dates (manufacture and expiration), identification numbers, and any regulatory or recycling symbols.</li>
+            <li>Take close-ups of key details: product labels, barcodes, dates (manufacture and expiration), and identification numbers.</li>
             <li>Use bright, even lighting and avoid glare or shadows. Retake any blurry shots.</li>
             <li>Keep the product centered in the frame and clear away cluttered backgrounds.</li>
             <li>Upload photos for only one product per submission—do not mix different items.</li>

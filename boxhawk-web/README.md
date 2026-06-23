@@ -354,6 +354,7 @@ After login, users are redirected based on role:
 - Real-time image preview
 - Image deletion before submission
 - Form validation
+- AI-assisted label extraction after image upload
 - Tips for better photos
 
 **Workflow**:
@@ -370,6 +371,11 @@ After login, users are redirected based on role:
 - Upload progress tracked
 - Images can be deleted before submission
 - Mobile-friendly drag-and-drop support
+
+**AI Image Analysis**:
+- Uses `POST /api/photo-submissions/ai-image-analysis`
+- Sends uploaded submission images to Gemini 3.1 Flash Lite Preview through OpenRouter
+- Maps extracted values into `photo_submissions`, including manufacture date, expiration, manufacture address, and manufacture site
 
 ### 2. Expert Review Queue
 
@@ -400,18 +406,11 @@ After login, users are redirected based on role:
   - Dates (Manufacture, Expiration)
   - LOT/REF numbers
   - Size, Quantity
-  - **General Symbols** (image-based multi-select): Medical device symbols (CE marking, Sterile, Single Use, etc.) - stored as comma-separated string in `labels` field
-  - **Recycling Symbols** (image-based multi-select): Recycling codes (PET, HDPE, PVC, etc.) - stored as comma-separated string in `recycling_symbol` field
   - Manufacture Address, Site, Sponsor
   - Notes
 - Mark as Complete or Reject
 - Back to Review Queue button
 - Image modal for full-size viewing
-
-**Symbol Selection**:
-- Users select symbols by clicking image cards (defined in `constants/symbolOptions.js`)
-- Selected symbols stored as arrays in component state, serialized to comma-separated strings before saving
-- Symbol images located in `public/images/general symbols/` and `public/images/recycling symbols/`
 
 **Status Flow**:
 - Items start with `status = 'uploaded'` or `status = 'in_review'`
@@ -421,7 +420,6 @@ After login, users are redirected based on role:
 
 **Data Persistence**:
 - Form data is saved to `photo_submissions` table
-- Symbols are serialized to comma-separated strings before database update
 - `updated_at` timestamp is automatically updated
 
 ### 4. Review Confirmation
@@ -430,7 +428,6 @@ After login, users are redirected based on role:
 
 **Features**:
 - Double-check all entered information
-- Display selected symbols as badges
 - Confirm or Cancel actions
 - On confirm, updates submission status and redirects to success page
 
@@ -581,6 +578,45 @@ Upload images for a submission.
 ```
 
 **Note**: Creates image records and audit logs. Images must be uploaded to storage first.
+
+#### `POST /api/photo-submissions/ai-image-analysis`
+Run AI extraction for a photo submission and update extracted product fields.
+
+**Request Body**:
+```json
+{
+  "submission_id": 123,
+  "model": "google/gemini-3.1-flash-lite-preview"
+}
+```
+
+**Response**:
+```json
+{
+  "id": 123,
+  "result": {
+    "name": "Product Name",
+    "manufacturer": "Manufacturer Name",
+    "barcode": "0123456789012",
+    "size": "10 mL",
+    "date_of_manufacture": "2025-01",
+    "expiration": "2027-01",
+    "lot": "LOT123",
+    "ref": "REF123",
+    "quantity": "10",
+    "manufacture_address": "Manufacturer address",
+    "manufacture_site": "Manufacturing site",
+    "sponsor": "Sponsor or distributor",
+    "notes": "Additional extracted notes"
+  }
+}
+```
+
+**Note**:
+- Uses OpenRouter with Gemini 3.1 Flash Lite Preview by default.
+- Reads images from `photo_submission_images` for the supplied submission.
+- Updates `photo_submissions` with normalized extracted fields.
+- Handles common AI response aliases such as `manufacturing_date`, `expiry_date`, `manufacturer_address`, and `manufacturer_site`.
 
 #### `POST /api/photo-submissions/images/delete`
 Delete images (soft or hard delete).
@@ -1360,4 +1396,3 @@ npm install package@latest
 *Project Version: 0.1.0*
 *Next.js Version: 15.5.4*
 *React Version: 19.1.0*
-
