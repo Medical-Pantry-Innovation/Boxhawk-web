@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 // Emergency kill-switch: disable the privileged role-update endpoint by default.
 // Re-enable by setting this to false (and redeploying).
-const DISABLE_ADMIN_UPDATE_ROLE_API = true
+const DISABLE_ADMIN_UPDATE_ROLE_API = false
 
 export function middleware() {
   if (DISABLE_ADMIN_UPDATE_ROLE_API) {

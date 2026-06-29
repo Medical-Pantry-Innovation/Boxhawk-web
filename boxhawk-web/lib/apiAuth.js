@@ -9,7 +9,7 @@ export function apiAuth(requiredRole){
 
     userRole = supabase.auth.getUser(header);
 
-    let role = user.app_metadata.role;
+    let role = userRole.app_metadata.role;
     if(role === 'undefined'){
         role = 'photouser'
     }
