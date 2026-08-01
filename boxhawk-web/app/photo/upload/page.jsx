@@ -146,6 +146,7 @@ export default function UploadPage() {
       console.error(error)
     }
   }
+
   // Take photo (mobile)
   const takePhoto = () => {
     if (isMobile()) {
@@ -314,6 +315,7 @@ export default function UploadPage() {
   }
 
   return (
+    
       <div style={{ 
         minHeight: '100vh',
         backgroundColor: '#f8f9fa',
@@ -344,7 +346,7 @@ export default function UploadPage() {
             Take photos of different sides of the item ({images.length}/{maxImages})
           </p>
         </div>
-
+        
         {/* Upload Area */}
         <div
           style={{
