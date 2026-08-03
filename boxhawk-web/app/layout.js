@@ -53,6 +53,7 @@ export default function RootLayout({ children }) {
 
   // Don't show header on landing page
   const isLandingPage = pathname === '/landing'
+  const isHomePage = pathname === '/home'
   const isDashboard = pathname === '/' || pathname === '/dashboard'
   const isReviewQueue = pathname === '/items' || pathname.startsWith('/items/')
 
@@ -64,7 +65,7 @@ export default function RootLayout({ children }) {
         minHeight: '100vh',
         backgroundColor: '#ffffff'
       }}>
-        {!isLandingPage && (
+        {!isLandingPage && !isHomePage && (
           <header style={{
             backgroundColor: '#ffffff',
             color: '#1a1a1a',
