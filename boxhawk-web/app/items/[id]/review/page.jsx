@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function ReviewPage() {
@@ -13,23 +13,20 @@ export default function ReviewPage() {
   const [showImageModal, setShowImageModal] = useState(false)
   const [modalImageUrl, setModalImageUrl] = useState('')
   const router = useRouter()
-  const searchParams = useSearchParams()
-
   useEffect(() => {
-    // Get data from URL parameters
-    const dataParam = searchParams.get('data')
-    if (dataParam) {
-      try {
-        const decodedData = JSON.parse(decodeURIComponent(dataParam))
-        setReviewData(decodedData)
-      } catch (error) {
-        console.error('Error parsing review data:', error)
-        setError('Invalid review data')
+    try {
+      const stored = sessionStorage.getItem('reviewData')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        setReviewData(parsed)
+      } else {
+        setError('No review data provided')
       }
-    } else {
-      setError('No review data provided')
+    } catch (error) {
+      console.error('Error reading review data:', error)
+      setError('Invalid review data')
     }
-  }, [searchParams])
+  }, [])
 
   const handleSubmit = (type) => {
     setActionType(type)
@@ -110,11 +107,8 @@ export default function ReviewPage() {
   }
 
   const handleBack = () => {
-    // Pass form data back to detail page
-    const returnData = encodeURIComponent(JSON.stringify({
-      formData: reviewData.formData
-    }))
-    router.push(`/items/${reviewData?.itemId}?returnData=${returnData}`)
+    sessionStorage.setItem('returnData', JSON.stringify({ formData: reviewData.formData }))
+    router.push(`/items/${reviewData?.itemId}`)
   }
 
   if (error) {

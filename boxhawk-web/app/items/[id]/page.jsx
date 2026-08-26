@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -23,7 +23,6 @@ export default function ItemDetailPage() {
   const [modalImageUrl, setModalImageUrl] = useState('')
   const router = useRouter()
   const params = useParams()
-  const searchParams = useSearchParams()
 
   const itemId = params.id
 
@@ -71,8 +70,6 @@ export default function ItemDetailPage() {
         setImagesFromDetail(recs.map(r => r.url))
       }
       
-      // Check if there's form data from review page return
-      const returnData = searchParams.get('returnData')
       let initialFormData = {
         name: data.name || '',
         manufacturer: data.manufacturer || '',
@@ -91,14 +88,16 @@ export default function ItemDetailPage() {
         notes: data.notes || ''
       }
 
-      // If there's return data from review page, use it
-      if (returnData) {
-        try {
-          const parsedData = JSON.parse(decodeURIComponent(returnData))
+      // If returning from review page, restore edited form data
+      try {
+        const returnData = sessionStorage.getItem('returnData')
+        if (returnData) {
+          const parsedData = JSON.parse(returnData)
           initialFormData = { ...initialFormData, ...parsedData.formData }
-        } catch (e) {
-          console.error('Failed to parse return data:', e)
+          sessionStorage.removeItem('returnData')
         }
+      } catch (e) {
+        console.error('Failed to parse return data:', e)
       }
 
       setFormData(initialFormData)
@@ -138,13 +137,13 @@ export default function ItemDetailPage() {
   }
 
   const handleReview = () => {
-    // Navigate to review page with form data
-    const reviewData = encodeURIComponent(JSON.stringify({
+    const reviewData = {
       itemId: itemId,
       formData: formData,
       images: getImageList()
-    }))
-    router.push(`/items/${itemId}/review?data=${reviewData}`)
+    }
+    sessionStorage.setItem('reviewData', JSON.stringify(reviewData))
+    router.push(`/items/${itemId}/review`)
   }
 
   const handleImageClick = (imageUrl) => {
