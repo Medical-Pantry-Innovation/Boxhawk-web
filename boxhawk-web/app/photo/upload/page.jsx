@@ -21,6 +21,7 @@ export default function UploadPage() {
   const [cameraError, setCameraError] = useState(null)
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const fileInputRef = useRef(null)
   const router = useRouter()
 
   const minImages = 4
@@ -160,15 +161,35 @@ export default function UploadPage() {
       console.error(error)
     }
   }
-  // Take photo (mobile)
-  const takePhoto = () => {
-    if (isMobile()) {
-      fileInputRef.current?.click()
-    } else {
-      // Desktop fallback
-      fileInputRef.current?.click()
-    }
+  const switchCamera = () => {
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
+  }
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) {
+      fileInputRef.current?.click()
+      return
+    }
+
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    canvas.getContext('2d').drawImage(video, 0, 0)
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
+    const file = dataURLtoFile(dataUrl, `${generateUUID()}.jpg`)
+    setImages(prev => [...prev, { id: generateUUID(), file, preview: dataUrl }])
+  }
+
+  const handleFileInput = (event) => {
+    const files = Array.from(event.target.files || []).slice(0, maxImages - images.length)
+    const selectedImages = files.map(file => ({
+      id: generateUUID(),
+      file,
+      preview: URL.createObjectURL(file)
+    }))
+    setImages(prev => [...prev, ...selectedImages])
   }
 
   // Handle form input changes
